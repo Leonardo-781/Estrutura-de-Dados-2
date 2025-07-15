@@ -115,8 +115,5 @@ DungeonOfWords/
 
 ---
 
-## 🏆 Créditos
-**Matéria:** Estruturas de Dados II  
-**Universidade:** UFU – Universidade Federal de Uberlândia  
-**Autor:** Leonardo Cardoso  
+
 
