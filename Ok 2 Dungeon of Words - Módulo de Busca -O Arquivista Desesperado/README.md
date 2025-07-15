@@ -109,7 +109,7 @@ Siga o menu interativo para jogar os desafios ou testar os algoritmos.
 ## 📁 Estrutura do Projeto
 ```
 DungeonOfWords/
-├── arquivista_desesperado.py   # Código principal
+├── main.py   # Código principal
 ├── README.md                   # Este arquivo
 ```
 
