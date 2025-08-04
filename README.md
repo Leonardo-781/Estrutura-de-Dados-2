@@ -19,7 +19,7 @@ Este repositório contém um projeto relacionado a Estruturas de Dados (Estrutur
 ## Stack Tecnológica
 
 - **Linguagem:** Python  
-- **Bibliotecas:** Provavelmente utiliza bibliotecas padrão do Python para manipulação de dados e algoritmos.
+- **Bibliotecas:** utiliza bibliotecas padrão do Python para manipulação de dados e algoritmos.
 
 ## Licença
 
