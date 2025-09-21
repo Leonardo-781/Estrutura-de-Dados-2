@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dungeon of Words </title>
+  <style>
+    :root { --bg:#0f172a; --fg:#e2e8f0; --soft:#1e293b; --muted:#94a3b8; --acc:#38bdf8; --warn:#f59e0b; --ok:#22c55e; }
+    html,body { height:100%; }
+    body { margin:0; font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; background:var(--bg); color:var(--fg);}    
+    .wrap { max-width:1200px; margin:0 auto; padding:24px; }
+    h1 { font-size:26px; margin:0 0 8px; }
+    h2 { font-size:18px; margin:18px 0 8px; color:var(--acc); }
+    .muted{ color:var(--muted);} 
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 12px; }
+    .tab-btn { border:1px solid #334155; background:var(--soft); color:var(--fg); padding:8px 12px; border-radius:10px; cursor:pointer; transition: .15s all; }
+    .tab-btn[aria-selected="true"] { outline:2px solid var(--acc); }
+    .grid { display:grid; grid-template-columns: repeat(12, 1fr); gap:12px; }
+    .card { background:#0b1220; border:1px solid #1f2937; border-radius:14px; padding:12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    label { color:var(--muted); font-size:12px; }
+    input, select, textarea { background:#0b1220; color:var(--fg); border:1px solid #334155; border-radius:10px; padding:8px 10px; outline:none; }
+    textarea { width:100%; min-height:90px; resize:vertical; }
+    .btn { background:linear-gradient(180deg, #1f2a44, #0f172a); border:1px solid #334155; color:#e2e8f0; padding:8px 12px; border-radius:10px; cursor:pointer; }
+    .btn:hover { filter:brightness(1.1); }
+    .btn.ok { border-color:#155e36; background:linear-gradient(180deg, #164e32, #0f2b1b); }
+    .btn.warn { border-color:#7c4b0b; background:linear-gradient(180deg, #55340a, #2a1804); }
+    .hl { color:var(--acc); }
+    pre.out { background:#050a13; border:1px solid #1f2937; padding:10px; border-radius:10px; max-height:340px; overflow:auto; white-space:pre-wrap; }
+    .col-span-6{ grid-column: span 6 / span 6; }
+    .col-span-12{ grid-column: span 12 / span 12; }
+    .col-span-4{ grid-column: span 4 / span 4; }
+    .col-span-8{ grid-column: span 8 / span 8; }
+    .hidden{ display:none; }
+    .kbd { font:12px/1 monospace; background:#0f172a; border:1px solid #334155; border-radius:6px; padding:2px 6px; }
+    .hr { height:1px; background:#1f2937; margin:10px 0; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dungeon of Words </span></h1>
+  <div class="muted">Fase 3 (Grafos), Etapa 4 (Gulosos), Busca, Rabin–Karp, Huffman, Levenshtein.</div>
+
+  <!-- TABS -->
+  <div class="tabs" role="tablist" id="tabs">
+    <button class="tab-btn" role="tab" aria-selected="true" data-tab="busca">Busca</button>
+    <button class="tab-btn" role="tab" data-tab="rk">Rabin–Karp</button>
+    <button class="tab-btn" role="tab" data-tab="huff">Huffman / Validador</button>
+    <button class="tab-btn" role="tab" data-tab="lev">Levenshtein (PD)</button>
+    <button class="tab-btn" role="tab" data-tab="grafos">Grafos (Fase 3)</button>
+    <button class="tab-btn" role="tab" data-tab="gulosos">Gulosos (Etapa 4)</button>
+  </div>
+
+  <!-- CONTENTS -->
+  <section id="tab-busca">
+    <div class="grid">
+      <div class="card col-span-6">
+        <h2>Sequencial</h2>
+        <div class="row">
+          <label>Qtd. fragmentos</label>
+          <input id="frag-qtd" type="number" value="10000" min="1" />
+          <button class="btn" id="btn-frag">Gerar fragmentos</button>
+          <button class="btn" id="btn-busca-seq">Sortear alvo e buscar</button>
+        </div>
+      </div>
+      <div class="card col-span-6">
+        <h2>Binária</h2>
+        <div class="row">
+          <label>Qtd. catálogos</label>
+          <input id="cat-n" type="number" value="3" min="1" style="width:90px" />
+          <label>Tamanho</label>
+          <input id="cat-tam" type="number" value="10000" min="1" style="width:120px" />
+          <button class="btn" id="btn-cats">Gerar catálogos</button>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <label>Índice</label>
+          <input id="cat-idx" type="number" value="0" min="0" style="width:80px" />
+          <button class="btn" id="btn-sortear-alvo">Sortear alvo desse catálogo</button>
+          <input id="bin-alvo" placeholder="CAT-12345" style="width:160px" />
+          <button class="btn" id="btn-busca-bin">Buscar</button>
+        </div>
+      </div>
+      <div class="card col-span-12">
+        <h2>Saída</h2>
+        <pre class="out" id="out-busca"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-rk" class="hidden">
+    <div class="grid">
+      <div class="card col-span-12">
+        <h2>Rabin–Karp</h2>
+        <div class="row">
+          <label>Tamanho do tomo</label>
+          <input id="rk-tam" type="number" value="10000" />
+          <label>Qtd. padrões</label>
+          <input id="rk-qtd" type="number" value="3" />
+          <button class="btn" id="rk-carregar">Carregar</button>
+          <label>Padrão</label>
+          <input id="rk-pad" placeholder="ABC" />
+          <button class="btn" id="rk-buscar">Buscar</button>
+        </div>
+        <div class="hr"></div>
+        <pre class="out" id="out-rk"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-huff" class="hidden">
+    <div class="grid">
+      <div class="card col-span-6">
+        <h2>Huffman</h2>
+        <textarea id="huff-in" placeholder="Digite um texto para comprimir..."></textarea>
+        <div class="row">
+          <button class="btn" id="huff-comp">Comprimir</button>
+          <button class="btn" id="huff-dec">Descomprimir</button>
+        </div>
+        <pre class="out" id="out-huff"></pre>
+      </div>
+      <div class="card col-span-6">
+        <h2>Validador de Palavras</h2>
+        <div class="muted">Dicionário: FIRE, ICE, STONE, WOOD, WATER</div>
+        <div class="row" style="margin-top:8px">
+          <input id="val-pal" placeholder="palavra" />
+          <button class="btn" id="val-run">Validar</button>
+        </div>
+        <pre class="out" id="out-val"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-lev" class="hidden">
+    <div class="grid">
+      <div class="card col-span-12">
+        <h2>Levenshtein (PD)</h2>
+        <div class="row">
+          <input id="lev-a" placeholder="Texto A" style="width:280px" />
+          <input id="lev-b" placeholder="Texto B" style="width:280px" />
+          <label><input type="checkbox" id="lev-matriz" /> mostrar matriz</label>
+          <button class="btn" id="lev-run">Calcular</button>
+        </div>
+        <div class="hr"></div>
+        <pre class="out" id="out-lev"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-grafos" class="hidden">
+    <div class="grid">
+      <div class="card col-span-4">
+        <h2>Criar / Básico</h2>
+        <label><input type="checkbox" id="g-dir" /> grafo direcionado</label>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="g-criar">Criar novo grafo</button>
+          <button class="btn" id="g-demo">Preencher DEMO</button>
+        </div>
+        <div class="hr"></div>
+        <h2>Vértices</h2>
+        <div class="row">
+          <input id="g-v" placeholder="vértice" style="width:120px" />
+          <button class="btn" id="g-add-v">Adicionar</button>
+          <button class="btn warn" id="g-rem-v">Remover</button>
+        </div>
+        <div class="hr"></div>
+        <h2>Arestas</h2>
+        <div class="row">
+          <input id="g-u" placeholder="origem" style="width:110px" />
+          <input id="g-w" placeholder="destino" style="width:110px" />
+          <input id="g-p" type="number" value="1" style="width:80px" />
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button class="btn" id="g-add-e">Adicionar aresta</button>
+          <button class="btn warn" id="g-rem-e">Remover aresta</button>
+        </div>
+      </div>
+
+      <div class="card col-span-4">
+        <h2>Execuções</h2>
+        <div class="row">
+          <button class="btn" id="g-lista">Lista de adj.</button>
+          <button class="btn" id="g-matriz">Matriz de adj.</button>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <input id="g-src" placeholder="origem" style="width:120px" />
+          <button class="btn" id="g-dfs">DFS</button>
+          <button class="btn" id="g-bfs">BFS</button>
+        </div>
+        <div class="hr"></div>
+        <div class="row">
+          <button class="btn" id="g-dijkstra">Dijkstra</button>
+          <input id="g-target" placeholder="alvo (reconstr.)" style="width:160px" />
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button class="btn" id="g-topo">Topológica (Kahn)</button>
+          <button class="btn" id="g-color">Coloração</button>
+          <button class="btn" id="g-agm">AGM (Kruskal)</button>
+        </div>
+      </div>
+
+      <div class="card col-span-4">
+        <h2>Saída</h2>
+        <pre class="out" id="out-g"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-gulosos" class="hidden">
+    <div class="grid">
+      <div class="card col-span-12">
+        <h2>Troco (Greedy)</h2>
+        <div class="row">
+          <input id="troco-valor" type="number" value="289" style="width:140px" />
+          <input id="troco-moedas" value="100,50,20,10,5,2,1" style="width:260px" />
+          <button class="btn" id="troco-run">Calcular</button>
+        </div>
+      </div>
+
+      <div class="card col-span-6">
+        <h2>Escalonamento de Intervalos</h2>
+        <div class="row">
+          <input id="int-ini" type="number" value="1" style="width:90px" />
+          <input id="int-fim" type="number" value="4" style="width:90px" />
+          <input id="int-nome" value="T1" style="width:100px" />
+          <button class="btn" id="int-add">Adicionar</button>
+          <button class="btn" id="int-run">Selecionar</button>
+        </div>
+        <pre class="out" id="out-int"></pre>
+      </div>
+
+      <div class="card col-span-6">
+        <h2>Mochila Fracionária</h2>
+        <div class="row">
+          <input id="cap" type="number" value="15" style="width:90px" />
+          <input id="item-val" type="number" value="10" style="width:90px" />
+          <input id="item-peso" type="number" value="5" style="width:90px" />
+          <input id="item-nome" value="Ouro" style="width:120px" />
+          <button class="btn" id="item-add">Adicionar</button>
+          <button class="btn" id="mochila-run">Resolver</button>
+        </div>
+        <pre class="out" id="out-mochila"></pre>
+      </div>
+
+      <div class="card col-span-12">
+        <h2>Saída Geral</h2>
+        <pre class="out" id="out-gulosos"></pre>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// =================== Utilidades ===================
+const out = {
+  busca: document.getElementById('out-busca'),
+  rk: document.getElementById('out-rk'),
+  huff: document.getElementById('out-huff'),
+  val: document.getElementById('out-val'),
+  lev: document.getElementById('out-lev'),
+  g: document.getElementById('out-g'),
+  gulosos: document.getElementById('out-gulosos'),
+  int: document.getElementById('out-int'),
+  mochila: document.getElementById('out-mochila'),
+};
+
+function log(node, text) {
+  node.textContent += text + "\n";
+  node.scrollTop = node.scrollHeight;
+}
+function clear(node) { node.textContent = ''; }
+
+// =================== TABS ===================
+const tabs = document.getElementById('tabs');
+const sections = {
+  busca: document.getElementById('tab-busca'),
+  rk: document.getElementById('tab-rk'),
+  huff: document.getElementById('tab-huff'),
+  lev: document.getElementById('tab-lev'),
+  grafos: document.getElementById('tab-grafos'),
+  gulosos: document.getElementById('tab-gulosos'),
+};
+
+tabs.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-tab]');
+  if(!btn) return;
+  const tab = btn.getAttribute('data-tab');
+  for(const k in sections){ sections[k].classList.toggle('hidden', k !== tab); }
+  for(const b of tabs.querySelectorAll('.tab-btn')){ b.setAttribute('aria-selected', String(b===btn)); }
+});
+
+// =================== Busca ===================
+const modulo = {
+  fragmentos: [],
+  catalogos: [],
+  tomos: [],
+  padroes: [],
+};
+
+function gerarFragmentos(qtd=10000){
+  modulo.fragmentos = Array.from({length:qtd}, () => `FRAG-${Math.floor(10000 + Math.random()*90000)}`);
+  return modulo.fragmentos[Math.floor(Math.random()*modulo.fragmentos.length)];
+}
+function buscaSequencial(alvo){
+  let comps=0;
+  for(let i=0;i<modulo.fragmentos.length;i++){
+    comps++;
+    if(modulo.fragmentos[i]===alvo) return {pos:i, comps};
+  }
+  return {pos:-1, comps};
+}
+function gerarCatalogos(n=3, tam=10000){
+  modulo.catalogos = Array.from({length:n}, () => Array.from({length:tam}, () => `CAT-${Math.floor(10000 + Math.random()*90000)}`).sort());
+  return modulo.catalogos.map(cat => cat[Math.floor(Math.random()*cat.length)]);
+}
+function buscaBinaria(cat, alvo){
+  let lo=0, hi=cat.length-1, comps=0;
+  while(lo<=hi){
+    const mid = (lo+hi>>1);
+    comps++;
+    if(cat[mid]===alvo) return {pos:mid, comps};
+    if(cat[mid]<alvo) lo=mid+1; else hi=mid-1;
+  }
+  return {pos:-1, comps};
+}
+
+// UI - Busca
+const fragQtd = document.getElementById('frag-qtd');
+const btnFrag = document.getElementById('btn-frag');
+const btnSeq = document.getElementById('btn-busca-seq');
+const catN = document.getElementById('cat-n');
+const catTam = document.getElementById('cat-tam');
+const btnCats = document.getElementById('btn-cats');
+const catIdx = document.getElementById('cat-idx');
+const btnSortearAlvo = document.getElementById('btn-sortear-alvo');
+const binAlvo = document.getElementById('bin-alvo');
+const btnBin = document.getElementById('btn-busca-bin');
+
+btnFrag.addEventListener('click', () => {
+  clear(out.busca);
+  const qtd = Number(fragQtd.value||10000);
+  const alvo = gerarFragmentos(qtd);
+  log(out.busca, `[Sequencial] ${qtd} fragmentos gerados. Exemplo de alvo: ${alvo}`);
+});
+btnSeq.addEventListener('click', () => {
+  if(!modulo.fragmentos.length){ log(out.busca, 'Gere os fragmentos primeiro.'); return; }
+  const alvo = modulo.fragmentos[Math.floor(Math.random()*modulo.fragmentos.length)];
+  const {pos, comps} = buscaSequencial(alvo);
+  log(out.busca, `[Sequencial] Alvo=${alvo} | pos=${pos} | comparações=${comps}`);
+});
+btnCats.addEventListener('click', () => {
+  clear(out.busca);
+  const n = Number(catN.value||3), tam=Number(catTam.value||10000);
+  const alvos = gerarCatalogos(n, tam);
+  log(out.busca, `[Binária] ${n} catálogos gerados (tam=${tam}). Alvos sorteados: ${JSON.stringify(alvos)}`);
+});
+btnSortearAlvo.addEventListener('click', () => {
+  const i = Number(catIdx.value||0);
+  if(i<0 || i>=modulo.catalogos.length){ alert('Índice fora do intervalo.'); return; }
+  const alvo = modulo.catalogos[i][Math.floor(Math.random()*modulo.catalogos[i].length)];
+  binAlvo.value = alvo;
+  log(out.busca, `[Binária] Alvo sugerido para cat[${i}]: ${alvo}`);
+});
+btnBin.addEventListener('click', () => {
+  const i = Number(catIdx.value||0);
+  if(i<0 || i>=modulo.catalogos.length){ alert('Índice fora do intervalo.'); return; }
+  const alvo = binAlvo.value.trim();
+  const {pos, comps} = buscaBinaria(modulo.catalogos[i], alvo);
+  log(out.busca, `[Binária] cat[${i}] alvo=${alvo} | pos=${pos} | comps=${comps}`);
+});
+
+// =================== Rabin–Karp ===================
+function carregarTomos(tam=100000, qtd=5){
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ';
+  const texto = Array.from({length:tam}, ()=> letters[Math.floor(Math.random()*letters.length)]).join('');
+  const pads = Array.from({length:qtd}, ()=>{
+    const k = Math.floor(3+Math.random()*5);
+    return Array.from({length:k}, ()=> 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random()*26)]).join('');
+  });
+  modulo.tomos = [texto];
+  modulo.padroes = pads;
+  return {texto, pads};
+}
+function rabinKarp(texto, padrao){
+  const d=256, q=101;
+  const n=texto.length, m=padrao.length;
+  if(m===0 || m>n) return {posicoes:[], comps:0};
+  let h = 1;
+  for(let i=0;i<m-1;i++) h = (h*d) % q;
+  let hp=0, ht=0;
+  for(let i=0;i<m;i++){
+    hp = (d*hp + padrao.charCodeAt(i)) % q;
+    ht = (d*ht + texto.charCodeAt(i)) % q;
+  }
+  const pos=[]; let comps=0;
+  for(let i=0;i<=n-m;i++){
+    comps++;
+    if(hp===ht && texto.slice(i,i+m)===padrao){ pos.push(i); }
+    if(i<n-m){
+      ht = (d*(ht - texto.charCodeAt(i)*h) + texto.charCodeAt(i+m)) % q;
+      if(ht<0) ht += q;
+    }
+  }
+  return {posicoes:pos, comps};
+}
+
+const rkTam = document.getElementById('rk-tam');
+const rkQtd = document.getElementById('rk-qtd');
+const rkCarregar = document.getElementById('rk-carregar');
+const rkPad = document.getElementById('rk-pad');
+const rkBuscar = document.getElementById('rk-buscar');
+
+rkCarregar.addEventListener('click', () => {
+  clear(out.rk);
+  const {pads} = carregarTomos(Number(rkTam.value||10000), Number(rkQtd.value||3));
+  rkPad.value = pads.length? pads[Math.floor(Math.random()*pads.length)] : '';
+  log(out.rk, `Tomos carregados. Padrões: ${JSON.stringify(pads)}`);
+});
+rkBuscar.addEventListener('click', () => {
+  if(!modulo.tomos.length){ log(out.rk, 'Carregue os tomos primeiro.'); return; }
+  const padrao = rkPad.value.trim().toUpperCase();
+  const {posicoes, comps} = rabinKarp(modulo.tomos[0], padrao);
+  log(out.rk, `Padrão: ${padrao} | Ocorrências: ${posicoes.length} | Comparações: ${comps} | primeiras pos: ${JSON.stringify(posicoes.slice(0,10))}`);
+});
+
+// =================== Huffman & Validador ===================
+class HuffNode { constructor(ch=null,f=0,l=null,r=null){ this.ch=ch; this.f=f; this.l=l; this.r=r; } }
+function huffBuild(text){
+  if(!text) return null;
+  const freq = new Map();
+  for(const c of text){ freq.set(c, (freq.get(c)||0)+1); }
+  let h = [...freq.entries()].map(([ch,f])=> new HuffNode(ch,f));
+  if(h.length===1){ const u=h[0]; return new HuffNode(null,u.f,u,null); }
+  while(h.length>1){
+    h.sort((a,b)=> a.f-b.f);
+    const a=h.shift(), b=h.shift();
+    h.push(new HuffNode(null, a.f+b.f, a, b));
+  }
+  return h[0];
+}
+function huffMap(node){
+  const map = {};
+  function dfs(n, path){ if(!n) return; if(n.ch!==null){ map[n.ch]= path||'0'; } else { dfs(n.l, path+'0'); dfs(n.r, path+'1'); }}
+  dfs(node, ''); return map;
+}
+function huffCompress(text){ const root=huffBuild(text); if(!root) return {bits:'', table:{}}; const table=huffMap(root); const bits=[...text].map(c=>table[c]).join(''); return {bits, table}; }
+function huffDecompress(bits, table){ if(!bits||!table) return ''; const inv={}; for(const k in table) inv[table[k]]=k; let out=''; let buf=''; for(const b of bits){ buf+=b; if(inv[buf]){ out+=inv[buf]; buf=''; } } return out; }
+
+const hIn = document.getElementById('huff-in');
+const hComp = document.getElementById('huff-comp');
+const hDec = document.getElementById('huff-dec');
+let lastBits='', lastTable=null;
+
+hComp.addEventListener('click', ()=>{
+  clear(out.huff);
+  const txt = hIn.value;
+  const {bits, table} = huffCompress(txt);
+  lastBits = bits; lastTable = table;
+  log(out.huff, `[Tabela] ${JSON.stringify(table)}`);
+  log(out.huff, `[Codificado] ${bits}`);
+});
+hDec.addEventListener('click', ()=>{
+  if(!lastBits || !lastTable){ log(out.huff, 'Nada para descomprimir.'); return; }
+  const dec = huffDecompress(lastBits, lastTable);
+  log(out.huff, `[Decodificado] ${dec}`);
+});
+
+const valInput = document.getElementById('val-pal');
+const valRun = document.getElementById('val-run');
+const dict = new Set(['FIRE','ICE','STONE','WOOD','WATER']);
+valRun.addEventListener('click', ()=>{
+  const p = (valInput.value||'').trim().toUpperCase();
+  if(!p) return; log(out.val, `'${p}' -> ${dict.has(p)?'SIM':'NÃO'}`);
+});
+
+// =================== Levenshtein ===================
+function levenshtein(a,b){
+  const m=a.length, n=b.length; const dp=Array.from({length:m+1},()=>Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) dp[i][0]=i; for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      const cost = a[i-1]===b[j-1]? 0:1;
+      dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+    }
+  }
+  return {dist: dp[m][n], dp};
+}
+const levA=document.getElementById('lev-a');
+const levB=document.getElementById('lev-b');
+const levM=document.getElementById('lev-matriz');
+const levRun=document.getElementById('lev-run');
+levRun.addEventListener('click', ()=>{
+  clear(out.lev);
+  const a=levA.value||'', b=levB.value||''; const {dist, dp} = levenshtein(a,b);
+  log(out.lev, `Distância entre '${a}' e '${b}': ${dist}`);
+  if(levM.checked){ dp.forEach(row => log(out.lev, row.map(c=>String(c).padStart(3,' ')).join(' '))); }
+});
+
+// =================== Grafos (Fase 3) ===================
+class Graph {
+  constructor(dir=false){ this.dir=dir; this.adj=new Map(); }
+  _ensure(v){ if(!this.adj.has(v)) this.adj.set(v, new Map()); }
+  addV(v){ this._ensure(v); }
+  remV(v){ this.adj.delete(v); for(const [u,map] of this.adj){ map.delete(v);} }
+  addE(u,v,w=1){ this._ensure(u); this._ensure(v); this.adj.get(u).set(v,w); if(!this.dir) this.adj.get(v).set(u,w); }
+  remE(u,v){ if(this.adj.has(u)) this.adj.get(u).delete(v); if(!this.dir && this.adj.has(v)) this.adj.get(v).delete(u); }
+  verts(){ return [...this.adj.keys()]; }
+  edges(){ const E=[]; const seen=new Set(); for(const [u,map] of this.adj){ for(const [v,w] of map){ const key=`${u}|${v}`; const key2=`${v}|${u}`; if(this.dir || !seen.has(key2)){ E.push([u,v,w]); seen.add(key); } } } return E; }
+  listStr(){ const lines=['[Lista de Adjacências]']; const V=[...this.adj.keys()].sort(); for(const u of V){ const viz=[...this.adj.get(u).entries()].map(([v,w])=>`${v}(${w})`).join(', '); lines.push(`${u} -> ${viz}`);} return lines.join('\n'); }
+  matrix(){ const V=[...this.adj.keys()].sort(); const idx=new Map(V.map((v,i)=>[v,i])); const n=V.length; const M=Array.from({length:n},()=>Array(n).fill(0)); for(const u of V){ for(const [v,w] of this.adj.get(u).entries()){ M[idx.get(u)][idx.get(v)]=w; } } return {V,M}; }
+  matrixStr(){ const {V,M}=this.matrix(); const rows=M.map(row=> row.map(x=> String(x).padStart(3,' ')).join(' ')); return `[Matriz de Adjacência] (ordem: ${JSON.stringify(V)})\n`+rows.join('\n'); }
+  dfs(s){ if(!this.adj.has(s)) return []; const vis=new Set(); const ord=[]; const rec=(u)=>{ vis.add(u); ord.push(u); for(const v of this.adj.get(u).keys()){ if(!vis.has(v)) rec(v);} }; rec(s); return ord; }
+  bfs(s){ if(!this.adj.has(s)) return {ord:[], dist:{}}; const vis=new Set([s]); const q=[s]; const ord=[]; const dist={[s]:0}; while(q.length){ const u=q.shift(); ord.push(u); for(const v of this.adj.get(u).keys()){ if(!vis.has(v)){ vis.add(v); dist[v]=dist[u]+1; q.push(v);} } } return {ord, dist}; }
+  dijkstra(s){ for(const [u,map] of this.adj){ for(const [v,w] of map){ if(w<0) throw new Error('Dijkstra requer pesos não negativos.'); } }
+    const dist={}; const prev={}; const V=[...this.adj.keys()]; V.forEach(v=>{dist[v]=Infinity; prev[v]=null;}); if(!this.adj.has(s)) return {dist, prev}; dist[s]=0; const pq=[[0,s]]; while(pq.length){ pq.sort((a,b)=>a[0]-b[0]); const [d,u]=pq.shift(); if(d!==dist[u]) continue; for(const [v,w] of this.adj.get(u).entries()){ const nd=d+w; if(nd<dist[v]){ dist[v]=nd; prev[v]=u; pq.push([nd,v]); } } } return {dist, prev}; }
+  static path(prev, alvo){ const cam=[]; let u=alvo; while(u!==null){ cam.push(u); u=prev[u]; } return cam.reverse(); }
+  topoKahn(){ if(!this.dir) throw new Error('Topológica requer grafo direcionado.'); const indeg={}; for(const v of this.verts()) indeg[v]=0; for(const [u,map] of this.adj){ for(const v of map.keys()){ indeg[v]=(indeg[v]||0)+1; if(!(u in indeg)) indeg[u]=indeg[u]||0; } }
+    const q=[]; for(const v in indeg) if(indeg[v]===0) q.push(v); const ord=[]; while(q.length){ const u=q.shift(); ord.push(u); for(const v of this.adj.get(u).keys()){ indeg[v]--; if(indeg[v]===0) q.push(v); } } if(ord.length!==Object.keys(indeg).length) return null; return ord; }
+  colorWelchPowell(){ const V=[...this.adj.keys()].sort((a,b)=> this.adj.get(b).size - this.adj.get(a).size); const color={}; let cur=0; for(const v of V){ if(color[v]) continue; cur++; color[v]=cur; for(const u of V){ if(!color[u]){ let ok=true; for(const x in color){ if(color[x]===cur){ if(this.adj.get(u).has(x) || this.adj.get(x)?.has?.(u)) { ok=false; break; } } }
+            if(ok) color[u]=cur; }
+        }
+    }
+    return color;
+  }
+  agmKruskal(){ if(this.dir) throw new Error('AGM: use grafo não-direcionado.'); const parent=new Map(); const rank=new Map(); const find=(x)=>{ if(!parent.has(x)) parent.set(x,x); if(parent.get(x)!==x) parent.set(x, find(parent.get(x))); return parent.get(x); };
+    const union=(a,b)=>{ let ra=find(a), rb=find(b); if(ra===rb) return false; const raR=rank.get(ra)||0, rbR=rank.get(rb)||0; if(raR<rbR){ const t=ra; ra=rb; rb=t; } parent.set(rb, ra); if(raR===rbR) rank.set(ra, raR+1); return true; };
+    const edges=this.edges().sort((e1,e2)=> e1[2]-e2[2]); const mst=[], total={v:0};
+    for(const [u,v,w] of edges){ if(union(u,v)){ mst.push([u,v,w]); total.v+=w; } }
+    return {mst, total: total.v};
+  }
+}
+
+let G=null;
+const gDir=document.getElementById('g-dir');
+const gCriar=document.getElementById('g-criar');
+const gDemo=document.getElementById('g-demo');
+const gV=document.getElementById('g-v');
+const gAddV=document.getElementById('g-add-v');
+const gRemV=document.getElementById('g-rem-v');
+const gU=document.getElementById('g-u');
+const gW=document.getElementById('g-w');
+const gP=document.getElementById('g-p');
+const gAddE=document.getElementById('g-add-e');
+const gRemE=document.getElementById('g-rem-e');
+const gLista=document.getElementById('g-lista');
+const gMatriz=document.getElementById('g-matriz');
+const gSrc=document.getElementById('g-src');
+const gDFS=document.getElementById('g-dfs');
+const gBFS=document.getElementById('g-bfs');
+const gDij=document.getElementById('g-dijkstra');
+const gTarget=document.getElementById('g-target');
+const gTopo=document.getElementById('g-topo');
+const gColor=document.getElementById('g-color');
+const gAGM=document.getElementById('g-agm');
+
+gCriar.addEventListener('click', ()=>{ G=new Graph(gDir.checked); clear(out.g); log(out.g, `Novo grafo criado. Direcionado=${G.dir}`); });
+gDemo.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } const edges=[["A","B",4],["A","C",2],["B","C",5],["B","D",10],["C","E",3],["E","D",4],["D","F",11]]; edges.forEach(([u,v,w])=>G.addE(u,v,w)); log(out.g, 'DEMO carregada.'); });
+
+gAddV.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } const v=gV.value.trim(); if(!v) return; G.addV(v); log(out.g, `Vértice '${v}' adicionado.`); });
+gRemV.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } const v=gV.value.trim(); if(!v) return; G.remV(v); log(out.g, `Vértice '${v}' removido.`); });
+
+gAddE.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } const u=gU.value.trim(), v=gW.value.trim(); const w=Number(gP.value||1); if(!u||!v) return; G.addE(u,v,w); log(out.g, `Aresta ${u} -> ${v} (w=${w}) adicionada.`); });
+gRemE.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } const u=gU.value.trim(), v=gW.value.trim(); if(!u||!v) return; G.remE(u,v); log(out.g, `Aresta ${u} - ${v} removida.`); });
+
+gLista.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } log(out.g, G.listStr()); });
+gMatriz.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } log(out.g, G.matrixStr()); });
+
+gDFS.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } const s=gSrc.value.trim(); log(out.g, `DFS(${s}): ${JSON.stringify(G.dfs(s))}`); });
+gBFS.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } const s=gSrc.value.trim(); const {ord, dist}=G.bfs(s); log(out.g, `BFS(${s}): ${JSON.stringify(ord)} | dist: ${JSON.stringify(dist)}`); });
+
+gDij.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } const s=gSrc.value.trim(); try{ const {dist, prev}=G.dijkstra(s); log(out.g, `Dijkstra(${s}) distâncias: ${JSON.stringify(dist)}`); const alvo=gTarget.value.trim(); if(alvo){ log(out.g, `Caminho ${s} -> ${alvo}: ${JSON.stringify(Graph.path(prev, alvo))}`);} }catch(e){ log(out.g, String(e)); }
+});
+
+gTopo.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } try{ const ord=G.topoKahn(); if(ord===null) log(out.g, 'O grafo possui ciclo; topológica impossível.'); else log(out.g, `Ordem topológica: ${JSON.stringify(ord)}`); }catch(e){ log(out.g, String(e)); }
+});
+
+gColor.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } const cores=G.colorWelchPowell(); const k=new Set(Object.values(cores)).size; log(out.g, `Coloração (v->cor): ${JSON.stringify(cores)} | nº cores=${k}`); });
+
+gAGM.addEventListener('click', ()=>{ if(!G){ log(out.g,'Crie um grafo primeiro.'); return; } try{ const {mst,total}=G.agmKruskal(); log(out.g, `AGM (Kruskal): ${JSON.stringify(mst)}\nCusto total: ${total}`); }catch(e){ log(out.g, String(e)); }
+});
+
+// =================== Gulosos ===================
+function trocoGreedy(valor, moedas){ moedas = moedas.filter(m=>m>0).sort((a,b)=>b-a); const res={}; let rest=valor; for(const m of moedas){ if(rest===0) break; const q = Math.floor(rest/m); if(q>0){ res[m]=q; rest-=q*m; } } return res; }
+function intervalScheduling(intervals){ intervals = [...intervals].sort((a,b)=> a[1]-b[1]); const sel=[]; let end=-1e18; for(const it of intervals){ const [ini,fim,nome]=it; if(ini>=end){ sel.push(it); end=fim; } } return sel; }
+function fractionalKnapsack(cap, items){ items=[...items].sort((a,b)=> (b[0]/b[1]) - (a[0]/a[1])); let total=0; const comp=[]; let c=cap; for(const [v,p,n] of items){ if(c<=0) break; if(p<=0){ if(v>0){ comp.push([n,1]); total+=v; } continue; } if(p<=c){ comp.push([n,1]); total+=v; c-=p; } else { const frac=c/p; comp.push([n, +frac.toFixed(6)]); total+=v*frac; c=0; } } return {total, comp}; }
+
+const trocoValor=document.getElementById('troco-valor');
+const trocoMoedas=document.getElementById('troco-moedas');
+const trocoRun=document.getElementById('troco-run');
+const intIni=document.getElementById('int-ini');
+const intFim=document.getElementById('int-fim');
+const intNome=document.getElementById('int-nome');
+const intAdd=document.getElementById('int-add');
+const intRun=document.getElementById('int-run');
+let intervals=[];
+
+const capIn=document.getElementById('cap');
+const itemVal=document.getElementById('item-val');
+const itemPeso=document.getElementById('item-peso');
+const itemNome=document.getElementById('item-nome');
+const itemAdd=document.getElementById('item-add');
+const mochilaRun=document.getElementById('mochila-run');
+let items=[];
+
+
+trocoRun.addEventListener('click', ()=>{
+  const valor=Number(trocoValor.value||0);
+  const moedas = (trocoMoedas.value||'').split(',').map(s=>Number(s.trim())).filter(x=>!Number.isNaN(x));
+  const sol = trocoGreedy(valor, moedas); const soma = Object.entries(sol).reduce((acc,[m,q])=> acc + Number(m)*q, 0);
+  const msg = `[Troco] solução: ${JSON.stringify(sol)} | soma=${soma}` + (soma===valor? '' : ' (sistema não canônico; pode sobrar)');
+  log(out.gulosos, msg);
+});
+
+intAdd.addEventListener('click', ()=>{
+  const ini=Number(intIni.value||0), fim=Number(intFim.value||0); const nome=(intNome.value||'').trim() || `T${intervals.length+1}`; if(fim<ini){ alert('Fim deve ser >= início'); return; } intervals.push([ini,fim,nome]); log(out.int, `[Intervalos] Adicionado: (${ini},${fim},${nome})`);
+});
+intRun.addEventListener('click', ()=>{
+  if(!intervals.length){ log(out.int, '[Intervalos] Adicione tarefas primeiro.'); return; } const sel=intervalScheduling(intervals); log(out.int, `[Intervalos] Selecionadas (${sel.length}): ${JSON.stringify(sel)}`);
+});
+
+itemAdd.addEventListener('click', ()=>{
+  const v=Number(itemVal.value||0), p=Number(itemPeso.value||0); const n=(itemNome.value||'').trim() || `I${items.length+1}`; items.push([v,p,n]); log(out.mochila, `[Mochila] Item adicionado: (v=${v}, p=${p}, nome=${n})`);
+});
+mochilaRun.addEventListener('click', ()=>{
+  if(!items.length){ log(out.mochila, '[Mochila] Adicione itens primeiro.'); return; } const cap=Number(capIn.value||0); const {total, comp} = fractionalKnapsack(cap, items); log(out.mochila, `[Mochila] Valor total: ${total.toFixed(4)} | composição: ${JSON.stringify(comp)}`);
+});
+
+</script>
+</body>
+</html>
