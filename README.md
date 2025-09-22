@@ -1,6 +1,5 @@
 # Dungeon of Words – O Arquivista Desesperado
 
-> Laboratório interativo de algoritmos em Python: **busca**, **grafos**, **gulosos** e **programação dinâmica** — com menus, exemplos e um grafo de demonstração.
 
 ---
 
